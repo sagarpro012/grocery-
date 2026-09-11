@@ -1,0 +1,17 @@
+{
+  "name": "greencart",
+  "version": "1.0.0",
+  "description": "Fresh grocery delivery store — portfolio project",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

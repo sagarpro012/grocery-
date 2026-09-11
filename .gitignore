@@ -1,0 +1,5 @@
+node_modules/
+greencart.db
+greencart.db-shm
+greencart.db-wal
+.env

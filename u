@@ -1,0 +1,8 @@
+greencart/
+package.json├── 
+├── server.js
+├── db.js
+├── seed.js
+├── greencart.db        ← auto-created on first run
+└── public/
+    └── index.html      ← your existing file goes here
