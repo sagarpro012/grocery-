@@ -1,5 +1,6 @@
 const express = require("express");
 const path    = require("path");
+const crypto  = require("crypto");
 const db      = require("./db");
 
 const app  = express();
@@ -22,6 +23,39 @@ app.use(express.static(__dirname));
 /* ---------- health ---------- */
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 
+/* ---------- accounts ---------- */
+const userByEmail = db.prepare("SELECT id, name, email, password_hash AS passwordHash FROM users WHERE email = ?");
+const insertUser = db.prepare("INSERT INTO users (id, name, email, password_hash) VALUES (?, ?, ?, ?)");
+const passwordHash = password => crypto.scryptSync(password, process.env.AUTH_SALT || "greencart-demo-salt", 32).toString("hex");
+const publicUser = user => ({ id: user.id, name: user.name, email: user.email });
+
+app.post("/api/auth/signup", (req, res) => {
+  const { name = "", email = "", password = "" } = req.body || {};
+  if (name.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()) || password.length < 6) {
+    return res.status(400).json({ error: "Please provide a valid name, email, and password of at least 6 characters." });
+  }
+  const cleanEmail = email.trim().toLowerCase();
+  try {
+    const user = { id: "u_" + crypto.randomUUID(), name: name.trim(), email: cleanEmail };
+    insertUser.run(user.id, user.name, user.email, passwordHash(password));
+    res.status(201).json({ user: publicUser(user) });
+  } catch (error) {
+    if (String(error.message).includes("UNIQUE")) return res.status(409).json({ error: "An account with this email already exists." });
+    console.error("Signup failed:", error);
+    res.status(500).json({ error: "Could not create the account." });
+  }
+});
+
+app.post("/api/auth/login", (req, res) => {
+  const { email = "", password = "" } = req.body || {};
+  const user = userByEmail.get(email.trim().toLowerCase());
+  const suppliedHash = passwordHash(password);
+  if (!user || !password || !crypto.timingSafeEqual(Buffer.from(user.passwordHash, "hex"), Buffer.from(suppliedHash, "hex"))) {
+    return res.status(401).json({ error: "Email or password is incorrect." });
+  }
+  res.json({ user: publicUser(user) });
+});
+
 /* ---------- products ---------- */
 app.get("/api/products", (req, res) => {
   const rows = db.prepare(`
@@ -43,12 +77,13 @@ app.get("/api/products/:id", (req, res) => {
 
 /* ---------- orders ---------- */
 app.get("/api/orders", (req, res) => {
+  const email = (req.query.email || "").trim().toLowerCase();
   const orders = db.prepare(`
-    SELECT id, name, email, address, city, zip, notes, payment,
+    SELECT id, user_id AS userId, name, email, address, city, zip, notes, payment,
            subtotal, delivery, total, status, created_at AS placedAt
-    FROM orders
+    FROM orders ${email ? "WHERE lower(email) = ?" : ""}
     ORDER BY created_at DESC
-  `).all();
+  `).all(...(email ? [email] : []));
 
   const itemsStmt = db.prepare(`
     SELECT product_id AS id, name, qty, price
@@ -58,6 +93,7 @@ app.get("/api/orders", (req, res) => {
 
   const result = orders.map(o => ({
     id: o.id,
+    userId: o.userId,
     placedAt: o.placedAt,
     status: o.status,
     subtotal: o.subtotal,
@@ -75,9 +111,9 @@ app.get("/api/orders", (req, res) => {
 
 const insertOrder = db.prepare(`
   INSERT INTO orders
-    (id, name, email, address, city, zip, notes, payment, subtotal, delivery, total, status)
+    (id, user_id, name, email, address, city, zip, notes, payment, subtotal, delivery, total, status)
   VALUES
-    (@id, @name, @email, @address, @city, @zip, @notes, @payment,
+    (@id, @userId, @name, @email, @address, @city, @zip, @notes, @payment,
      @subtotal, @delivery, @total, @status)
 `);
 
@@ -89,6 +125,7 @@ const insertItem = db.prepare(`
 const createOrder = db.transaction(order => {
   insertOrder.run({
     id:       order.id,
+    userId:   order.userId || null,
     name:     order.customer.name,
     email:    order.customer.email,
     address:  order.customer.address,

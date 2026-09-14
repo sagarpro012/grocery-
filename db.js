@@ -38,6 +38,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS orders (
     id        TEXT PRIMARY KEY,
+    user_id    TEXT,
     name      TEXT NOT NULL,
     email     TEXT NOT NULL,
     address   TEXT NOT NULL,
@@ -65,6 +66,19 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_orders_email   ON orders(email);
   CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_items_order    ON order_items(order_id);
+`);
+
+try { db.exec("ALTER TABLE orders ADD COLUMN user_id TEXT"); } catch (_) {}
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id            TEXT PRIMARY KEY,
+    name          TEXT NOT NULL,
+    email         TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash TEXT NOT NULL,
+    created_at    TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
 `);
 
 module.exports = db;
