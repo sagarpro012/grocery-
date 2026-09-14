@@ -8,7 +8,10 @@
 <meta name="theme-color" content="#f6f9f5">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥬</text></svg>">
 <script>window.GREENCART_API_URL = "https://grocery-euqr.onrender.com";</script>
-<script>window.GREENCART_GITHUB_URL = "";</script>
+<script>
+  window.GREENCART_GOOGLE_URL = "";
+  window.GREENCART_FACEBOOK_URL = "";
+</script>
 <style>
 /* ============ tokens ============ */
 *,*::before,*::after{box-sizing:border-box}
@@ -146,13 +149,22 @@ a{color:inherit}
 .auth-body{padding:24px 30px 30px}
 .auth-switch{text-align:center;color:var(--muted);font-size:.88rem;margin-top:18px}
 .auth-switch button{color:var(--green-d);font-weight:800;text-decoration:underline;text-underline-offset:3px}
-.github-btn{width:100%;margin-top:12px;background:#111c15;color:#fff;box-shadow:0 8px 18px rgba(12,32,18,.2)}
-.github-btn:hover{background:#24352a;transform:translateY(-2px);box-shadow:0 14px 26px rgba(12,32,18,.25)}
+.social-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.social-btn{min-width:0;padding:12px 10px;background:#fff;border:1px solid var(--line);box-shadow:var(--sh-sm);font-size:.88rem}
+.social-btn:hover{transform:translateY(-2px);box-shadow:var(--sh);border-color:#cfe6d6}
+.social-mark{font-weight:900;font-size:1.05rem}
 .auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:#91a297;font-size:.76rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
 .auth-divider::before,.auth-divider::after{content:"";height:1px;flex:1;background:var(--line)}
 .auth-form{animation:authIn .45s var(--ease) both}
 @keyframes authIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
 @media (max-width:720px){.account-btn{padding:10px 12px}.account-btn span:last-child{display:none}.auth-art{padding:24px}.auth-body{padding:22px 24px 26px}}
+.history-list{display:grid;gap:12px;margin-top:18px}
+.history-item{padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff;animation:slideIn .4s var(--ease) both}
+.history-top,.history-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.history-top strong{font-size:.94rem}.history-bottom{margin-top:8px;color:var(--muted);font-size:.82rem}
+.status{padding:4px 9px;border-radius:999px;background:var(--green-l);color:var(--green-d);font-size:.72rem;font-weight:800}
+.history-empty{text-align:center;padding:26px;color:var(--muted)}
+@media (max-width:460px){.social-row{grid-template-columns:1fr}}
 
 /* ============ hero ============ */
 .hero{position:relative;padding:clamp(44px,6.5vw,88px) 0 clamp(40px,5vw,64px);overflow:hidden}
@@ -786,6 +798,14 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
             <label class="pay"><input type="radio" name="payment" value="cash"><span>💵 Cash on delivery</span></label>
           </div>
         </fieldset>
+        <div id="cardFields">
+          <div class="field"><label for="cardNumber">Card number</label><input id="cardNumber" name="cardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="4242 4242 4242 4242"><p class="err">Enter a valid 16-digit card number.</p></div>
+          <div class="row2">
+            <div class="field"><label for="cardExpiry">Expiry</label><input id="cardExpiry" name="cardExpiry" inputmode="numeric" autocomplete="cc-exp" placeholder="MM / YY"><p class="err">Use a valid future expiry.</p></div>
+            <div class="field"><label for="cardCvc">CVC</label><input id="cardCvc" name="cardCvc" inputmode="numeric" autocomplete="cc-csc" placeholder="123"><p class="err">Enter a 3 or 4 digit CVC.</p></div>
+          </div>
+          <p class="secure">🔒 Demo payment only. No card data is sent or stored.</p>
+        </div>
 
         <div class="field">
           <label for="fNotes">Delivery notes <span class="muted" style="font-weight:500">(optional)</span></label>
@@ -818,7 +838,7 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
           <button class="btn btn-primary btn-block" type="submit">Log in</button>
         </form>
         <div class="auth-divider">or</div>
-        <button class="btn github-btn" type="button" data-github>Continue with GitHub <span aria-hidden="true">↗</span></button>
+        <div class="social-row"><button class="btn social-btn" type="button" data-provider="google"><span class="social-mark" style="color:#4285f4">G</span> Google</button><button class="btn social-btn" type="button" data-provider="facebook"><span class="social-mark" style="color:#1877f2">f</span> Facebook</button></div>
         <p class="auth-switch">New to GreenCart? <button type="button" data-auth-switch="signup">Create an account</button></p>
       </div>
       <div class="auth-form" id="signupView" hidden>
@@ -829,11 +849,16 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
           <button class="btn btn-primary btn-block" type="submit">Create account</button>
         </form>
         <div class="auth-divider">or</div>
-        <button class="btn github-btn" type="button" data-github>Continue with GitHub <span aria-hidden="true">↗</span></button>
+        <div class="social-row"><button class="btn social-btn" type="button" data-provider="google"><span class="social-mark" style="color:#4285f4">G</span> Google</button><button class="btn social-btn" type="button" data-provider="facebook"><span class="social-mark" style="color:#1877f2">f</span> Facebook</button></div>
         <p class="auth-switch">Already have an account? <button type="button" data-auth-switch="login">Log in</button></p>
       </div>
     </div>
   </div>
+</div>
+
+<div class="modal" id="historyModal" role="dialog" aria-modal="true" aria-labelledby="historyTitle" aria-hidden="true">
+  <div class="modal-bg" data-close-history></div>
+  <div class="modal-card"><button class="icon-btn" type="button" data-close-history aria-label="Close order history" style="float:right">✕</button><h2 id="historyTitle">Order history</h2><p class="muted sm">Your latest GreenCart deliveries.</p><div class="history-list" id="historyList"><div class="history-empty">Loading your orders…</div></div><button class="btn btn-ghost btn-block" type="button" data-logout style="margin-top:18px">Log out</button></div>
 </div>
 
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
@@ -967,6 +992,22 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
       } catch (_) {}
     }
     throw new Error("The order service is unavailable. Please try again when the store is online.");
+  }
+
+  async function authRequest(path, payload) {
+    const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Account request failed.");
+    return data.user;
+  }
+
+  async function loadOrderHistory() {
+    if (!state.user) return [];
+    try {
+      const res = await fetch(`${API_BASE}/api/orders?email=${encodeURIComponent(state.user.email)}`);
+      if (!res.ok) return [];
+      return (await res.json()).orders || [];
+    } catch (_) { return []; }
   }
 
   /* =========================================================
@@ -1232,6 +1273,8 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
+    $("#cardFields").hidden = $("input[name=payment]:checked").value !== "card";
+    if (state.user) $("#fEmail").value = state.user.email;
     setTimeout(() => $("#fName").focus(), 150);
   }
 
@@ -1310,12 +1353,27 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
     toast(message, "🌿", 3200);
   }
 
-  function githubLogin() {
-    if (window.GREENCART_GITHUB_URL) {
-      window.location.href = window.GREENCART_GITHUB_URL;
-      return;
-    }
-    toast("Add your GitHub OAuth URL to GREENCART_GITHUB_URL to enable GitHub sign-in.", "↗", 5200);
+  function socialLogin(provider) {
+    const url = provider === "google" ? window.GREENCART_GOOGLE_URL : window.GREENCART_FACEBOOK_URL;
+    if (url) { window.location.href = url; return; }
+    toast(`Add your ${provider === "google" ? "Google" : "Facebook"} OAuth URL to the page configuration first.`, "↗", 5200);
+  }
+
+  const historyModal = $("#historyModal");
+  async function openHistory() {
+    historyModal.classList.add("open");
+    historyModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    const orders = await loadOrderHistory();
+    $("#historyList").innerHTML = orders.length ? orders.map(order => `
+      <article class="history-item"><div class="history-top"><strong>${order.id}</strong><span class="status">${order.status}</span></div>
+      <div class="history-bottom"><span>${new Date(order.placedAt).toLocaleDateString()} · ${order.items.length} item${order.items.length === 1 ? "" : "s"}</span><strong>${money(order.total)}</strong></div></article>`).join("") : '<div class="history-empty">No orders yet. Your future deliveries will appear here.</div>';
+  }
+
+  function closeHistory() {
+    historyModal.classList.remove("open");
+    historyModal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
   }
 
   /* =========================================================
@@ -1332,6 +1390,11 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
       ["#fCity",    v => v.trim().length >= 2],
       ["#fZip",     v => v.trim().length >= 3]
     ];
+    if ($("input[name=payment]:checked").value === "card") {
+      checks.push(["#cardNumber", v => v.replace(/\D/g, "").length === 16]);
+      checks.push(["#cardExpiry", v => /^(0[1-9]|1[0-2])\s*\/\s*([2-9][0-9])$/.test(v.trim())]);
+      checks.push(["#cardCvc", v => /^\d{3,4}$/.test(v.trim())]);
+    }
     checks.forEach(([sel, test]) => {
       const input = $(sel);
       const field = input.closest(".field");
@@ -1360,6 +1423,7 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
     const fd = new FormData(form);
 
     const order = {
+      userId: state.user ? state.user.id : null,
       customer: {
         name: fd.get("name").trim(),
         email: fd.get("email").trim(),
@@ -1510,10 +1574,7 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
   // header cart
   $("#accountBtn").addEventListener("click", () => {
     if (state.user) {
-      state.user = null;
-      saveUser();
-      updateAccountButton();
-      toast("You have been logged out", "👋");
+      openHistory();
     } else openAuth("login");
   });
   $("#cartBtn").addEventListener("click", openCart);
@@ -1591,7 +1652,8 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
     if (e.target.closest("[data-close-auth]")) closeAuth();
     const switchButton = e.target.closest("[data-auth-switch]");
     if (switchButton) setAuthMode(switchButton.dataset.authSwitch);
-    if (e.target.closest("[data-github]")) githubLogin();
+    const provider = e.target.closest("[data-provider]");
+    if (provider) socialLogin(provider.dataset.provider);
   });
 
   $$("#loginForm, #signupForm").forEach(formEl => formEl.addEventListener("input", e => {
@@ -1599,17 +1661,33 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
     if (field) field.classList.remove("invalid");
   }));
 
-  $("#loginForm").addEventListener("submit", e => {
+  $("#loginForm").addEventListener("submit", async e => {
     e.preventDefault();
     const email = $("#loginEmail").value.trim();
     if (!validAuthForm(e.currentTarget, [["#loginEmail", v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())], ["#loginPassword", v => v.length >= 6]])) return;
-    finishAuth({ name: email.split("@")[0], email }, "Welcome back. Your account is ready.");
+    try { finishAuth(await authRequest("/api/auth/login", { email, password: $("#loginPassword").value }), "Welcome back. Your account is ready."); }
+    catch (error) { toast(error.message, "!", 4200); }
   });
 
-  $("#signupForm").addEventListener("submit", e => {
+  $("#signupForm").addEventListener("submit", async e => {
     e.preventDefault();
     if (!validAuthForm(e.currentTarget, [["#signupName", v => v.trim().length >= 2], ["#signupEmail", v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())], ["#signupPassword", v => v.length >= 6]])) return;
-    finishAuth({ name: $("#signupName").value.trim(), email: $("#signupEmail").value.trim() }, "Account created. Welcome to GreenCart!");
+    try { finishAuth(await authRequest("/api/auth/signup", { name: $("#signupName").value.trim(), email: $("#signupEmail").value.trim(), password: $("#signupPassword").value }), "Account created. Welcome to GreenCart!"); }
+    catch (error) { toast(error.message, "!", 4200); }
+  });
+
+  $("#checkoutForm").addEventListener("change", e => {
+    if (e.target.name === "payment") $("#cardFields").hidden = e.target.value !== "card";
+  });
+
+  historyModal.addEventListener("click", e => { if (e.target.closest("[data-close-history]")) closeHistory(); });
+  historyModal.addEventListener("click", e => {
+    if (!e.target.closest("[data-logout]")) return;
+    state.user = null;
+    saveUser();
+    updateAccountButton();
+    closeHistory();
+    toast("You have been logged out", "👋");
   });
 
   // modal close
@@ -1625,6 +1703,7 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       if (authModal.classList.contains("open")) closeAuth();
+      else if (historyModal.classList.contains("open")) closeHistory();
       else if (modal.classList.contains("open")) closeModal();
       else if (drawer.classList.contains("open")) closeCart();
     }
