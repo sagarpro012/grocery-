@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: greencart-api
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_PATH
+        value: /var/data/greencart.db
+    disk:
+      name: greencart-data
+      mountPath: /var/data
+      sizeGB: 1
