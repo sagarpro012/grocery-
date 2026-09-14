@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#f6f9f5">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥬</text></svg>">
 <script>window.GREENCART_API_URL = "https://grocery-euqr.onrender.com";</script>
+<script>window.GREENCART_GITHUB_URL = "";</script>
 <style>
 /* ============ tokens ============ */
 *,*::before,*::after{box-sizing:border-box}
@@ -127,6 +128,31 @@ a{color:inherit}
 .btn-sm{padding:10px 18px;font-size:.9rem}
 .btn-block{width:100%}
 .btn:disabled{opacity:.55;pointer-events:none}
+
+/* ============ account ============ */
+.account-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 15px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:var(--sh-sm);font-weight:700;font-size:.88rem;transition:transform .2s var(--ease),box-shadow .25s var(--ease),border-color .25s}
+.account-btn:hover{transform:translateY(-2px);box-shadow:var(--sh);border-color:#cfe6d6}
+.account-icon{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:var(--green-l);color:var(--green-d);font-size:.78rem}
+.account-btn.signed-in .account-icon{background:var(--green);color:#fff;animation:accountPop .5s var(--ease)}
+@keyframes accountPop{0%{transform:scale(.7) rotate(-12deg)}70%{transform:scale(1.12) rotate(4deg)}100%{transform:scale(1)}}
+.auth-modal .modal-card{width:min(460px,100%);overflow:hidden;padding:0}
+.auth-art{position:relative;min-height:148px;padding:28px 30px;background:linear-gradient(135deg,#dcfce7 0%,#fef9c3 100%);overflow:hidden}
+.auth-art::before,.auth-art::after{content:"";position:absolute;border-radius:50%;border:1px solid rgba(22,163,74,.18);animation:orbit 9s linear infinite}
+.auth-art::before{width:210px;height:210px;right:-65px;top:-100px}
+.auth-art::after{width:125px;height:125px;right:28px;top:-57px;animation-direction:reverse;animation-duration:6s}
+@keyframes orbit{to{transform:rotate(360deg)}}
+.auth-art h2{position:relative;z-index:1;font-size:1.65rem;max-width:12ch}
+.auth-art p{position:relative;z-index:1;margin-top:8px;color:var(--muted);font-size:.9rem}
+.auth-body{padding:24px 30px 30px}
+.auth-switch{text-align:center;color:var(--muted);font-size:.88rem;margin-top:18px}
+.auth-switch button{color:var(--green-d);font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.github-btn{width:100%;margin-top:12px;background:#111c15;color:#fff;box-shadow:0 8px 18px rgba(12,32,18,.2)}
+.github-btn:hover{background:#24352a;transform:translateY(-2px);box-shadow:0 14px 26px rgba(12,32,18,.25)}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:#91a297;font-size:.76rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
+.auth-divider::before,.auth-divider::after{content:"";height:1px;flex:1;background:var(--line)}
+.auth-form{animation:authIn .45s var(--ease) both}
+@keyframes authIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@media (max-width:720px){.account-btn{padding:10px 12px}.account-btn span:last-child{display:none}.auth-art{padding:24px}.auth-body{padding:22px 24px 26px}}
 
 /* ============ hero ============ */
 .hero{position:relative;padding:clamp(44px,6.5vw,88px) 0 clamp(40px,5vw,64px);overflow:hidden}
@@ -494,6 +520,9 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
     </nav>
 
     <div class="header-actions">
+      <button class="account-btn" id="accountBtn" type="button" aria-haspopup="dialog">
+        <span class="account-icon" aria-hidden="true">◉</span><span id="accountLabel">Log in</span>
+      </button>
       <a class="btn btn-primary btn-sm hide-sm" href="#shop">Shop now</a>
       <button class="cart-btn" id="cartBtn" aria-label="Open basket, 0 items" aria-haspopup="dialog">
         <span aria-hidden="true">🛒</span>
@@ -772,6 +801,41 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
   </div>
 </div>
 
+<!-- ================= ACCOUNT MODAL ================= -->
+<div class="modal auth-modal" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authTitle" aria-hidden="true">
+  <div class="modal-bg" data-close-auth></div>
+  <div class="modal-card">
+    <div class="auth-art">
+      <button class="icon-btn" type="button" data-close-auth aria-label="Close account dialog" style="position:absolute;right:22px;top:20px;z-index:2;background:rgba(255,255,255,.7)">✕</button>
+      <h2 id="authTitle">Welcome back</h2>
+      <p id="authSubtitle">Your freshest basket is a few clicks away.</p>
+    </div>
+    <div class="auth-body">
+      <div class="auth-form" id="loginView">
+        <form id="loginForm" novalidate>
+          <div class="field"><label for="loginEmail">Email</label><input id="loginEmail" name="email" type="email" autocomplete="email" required placeholder="you@example.com"><p class="err">Please enter a valid email address.</p></div>
+          <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" name="password" type="password" autocomplete="current-password" required minlength="6" placeholder="At least 6 characters"><p class="err">Use at least 6 characters.</p></div>
+          <button class="btn btn-primary btn-block" type="submit">Log in</button>
+        </form>
+        <div class="auth-divider">or</div>
+        <button class="btn github-btn" type="button" data-github>Continue with GitHub <span aria-hidden="true">↗</span></button>
+        <p class="auth-switch">New to GreenCart? <button type="button" data-auth-switch="signup">Create an account</button></p>
+      </div>
+      <div class="auth-form" id="signupView" hidden>
+        <form id="signupForm" novalidate>
+          <div class="field"><label for="signupName">Your name</label><input id="signupName" name="name" type="text" autocomplete="name" required placeholder="Ada Lovelace"><p class="err">Please enter your name.</p></div>
+          <div class="field"><label for="signupEmail">Email</label><input id="signupEmail" name="email" type="email" autocomplete="email" required placeholder="you@example.com"><p class="err">Please enter a valid email address.</p></div>
+          <div class="field"><label for="signupPassword">Create a password</label><input id="signupPassword" name="password" type="password" autocomplete="new-password" required minlength="6" placeholder="At least 6 characters"><p class="err">Use at least 6 characters.</p></div>
+          <button class="btn btn-primary btn-block" type="submit">Create account</button>
+        </form>
+        <div class="auth-divider">or</div>
+        <button class="btn github-btn" type="button" data-github>Continue with GitHub <span aria-hidden="true">↗</span></button>
+        <p class="auth-switch">Already have an account? <button type="button" data-auth-switch="login">Log in</button></p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 
 <noscript>
@@ -839,7 +903,8 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
     filter: "All",
     query: "",
     sort: "popular",
-    online: false
+    online: false,
+    user: null
   };
 
   const API_BASE = (window.GREENCART_API_URL || "").replace(/\/$/, "");
@@ -852,6 +917,15 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
   const saveCart = () => {
     try { localStorage.setItem("gc_cart", JSON.stringify(state.cart)); } catch (_) {}
   };
+
+  try { state.user = JSON.parse(localStorage.getItem("gc_user") || "null"); } catch (_) { state.user = null; }
+
+  function saveUser() {
+    try {
+      if (state.user) localStorage.setItem("gc_user", JSON.stringify(state.user));
+      else localStorage.removeItem("gc_user");
+    } catch (_) {}
+  }
 
   const cartCount = () => Object.values(state.cart).reduce((a, b) => a + b, 0);
 
@@ -1169,6 +1243,82 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
   }
 
   /* =========================================================
+     Account
+  ========================================================= */
+  const authModal = $("#authModal");
+  let authLastFocused = null;
+  let authMode = "login";
+
+  function updateAccountButton() {
+    const button = $("#accountBtn");
+    const label = $("#accountLabel");
+    const icon = $(".account-icon", button);
+    const signedIn = Boolean(state.user);
+    button.classList.toggle("signed-in", signedIn);
+    label.textContent = signedIn ? `Hi, ${state.user.name.split(" ")[0]}` : "Log in";
+    icon.textContent = signedIn ? "✓" : "◉";
+    button.setAttribute("aria-label", signedIn ? `Log out ${state.user.name}` : "Log in or create an account");
+  }
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    const login = mode === "login";
+    $("#loginView").hidden = !login;
+    $("#signupView").hidden = login;
+    $("#authTitle").textContent = login ? "Welcome back" : "Join the fresh side";
+    $("#authSubtitle").textContent = login ? "Your freshest basket is a few clicks away." : "Save your basket and check out faster next time.";
+    const view = login ? $("#loginView") : $("#signupView");
+    view.classList.remove("auth-form");
+    void view.offsetWidth;
+    view.classList.add("auth-form");
+  }
+
+  function openAuth(mode = "login") {
+    authLastFocused = document.activeElement;
+    setAuthMode(mode);
+    authModal.classList.add("open");
+    authModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    setTimeout(() => (mode === "login" ? $("#loginEmail") : $("#signupName")).focus(), 120);
+  }
+
+  function closeAuth() {
+    authModal.classList.remove("open");
+    authModal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = drawer.classList.contains("open") || modal.classList.contains("open") ? "hidden" : "";
+    if (authLastFocused && authLastFocused.focus) authLastFocused.focus();
+  }
+
+  function validAuthForm(form, fields) {
+    let ok = true;
+    fields.forEach(([selector, check]) => {
+      const input = $(selector, form);
+      const field = input.closest(".field");
+      const valid = check(input.value);
+      field.classList.toggle("invalid", !valid);
+      input.setAttribute("aria-invalid", String(!valid));
+      if (!valid && ok) { input.focus(); ok = false; }
+    });
+    return ok;
+  }
+
+  function finishAuth(user, message) {
+    state.user = user;
+    saveUser();
+    updateAccountButton();
+    closeAuth();
+    toast(message, "🌿", 3200);
+  }
+
+  function githubLogin() {
+    if (window.GREENCART_GITHUB_URL) {
+      window.location.href = window.GREENCART_GITHUB_URL;
+      return;
+    }
+    toast("Add your GitHub OAuth URL to GREENCART_GITHUB_URL to enable GitHub sign-in.", "↗", 5200);
+  }
+
+  /* =========================================================
      Checkout
   ========================================================= */
   const form = $("#checkoutForm");
@@ -1358,6 +1508,14 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
      Event wiring
   ========================================================= */
   // header cart
+  $("#accountBtn").addEventListener("click", () => {
+    if (state.user) {
+      state.user = null;
+      saveUser();
+      updateAccountButton();
+      toast("You have been logged out", "👋");
+    } else openAuth("login");
+  });
   $("#cartBtn").addEventListener("click", openCart);
   $("#closeCart").addEventListener("click", closeCart);
   overlay.addEventListener("click", closeCart);
@@ -1429,6 +1587,31 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
     openModal();
   });
 
+  $("#authModal").addEventListener("click", e => {
+    if (e.target.closest("[data-close-auth]")) closeAuth();
+    const switchButton = e.target.closest("[data-auth-switch]");
+    if (switchButton) setAuthMode(switchButton.dataset.authSwitch);
+    if (e.target.closest("[data-github]")) githubLogin();
+  });
+
+  $$("#loginForm, #signupForm").forEach(formEl => formEl.addEventListener("input", e => {
+    const field = e.target.closest(".field");
+    if (field) field.classList.remove("invalid");
+  }));
+
+  $("#loginForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const email = $("#loginEmail").value.trim();
+    if (!validAuthForm(e.currentTarget, [["#loginEmail", v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())], ["#loginPassword", v => v.length >= 6]])) return;
+    finishAuth({ name: email.split("@")[0], email }, "Welcome back. Your account is ready.");
+  });
+
+  $("#signupForm").addEventListener("submit", e => {
+    e.preventDefault();
+    if (!validAuthForm(e.currentTarget, [["#signupName", v => v.trim().length >= 2], ["#signupEmail", v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())], ["#signupPassword", v => v.length >= 6]])) return;
+    finishAuth({ name: $("#signupName").value.trim(), email: $("#signupEmail").value.trim() }, "Account created. Welcome to GreenCart!");
+  });
+
   // modal close
   modal.addEventListener("click", e => {
     if (e.target.closest("[data-close-modal]")) {
@@ -1441,11 +1624,13 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
   // keyboard
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
-      if (modal.classList.contains("open")) closeModal();
+      if (authModal.classList.contains("open")) closeAuth();
+      else if (modal.classList.contains("open")) closeModal();
       else if (drawer.classList.contains("open")) closeCart();
     }
     if (drawer.classList.contains("open") && !modal.classList.contains("open")) trapFocus(e, drawer);
     if (modal.classList.contains("open")) trapFocus(e, modal);
+    if (authModal.classList.contains("open")) trapFocus(e, authModal);
   });
 
   /* =========================================================
@@ -1453,6 +1638,7 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
   ========================================================= */
   async function init() {
     $("#year").textContent = new Date().getFullYear();
+    updateAccountButton();
     observeReveals();
     observeStats();
     onScroll();
