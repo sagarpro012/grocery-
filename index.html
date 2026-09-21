@@ -1019,7 +1019,8 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
     adminPassword: ""
   };
 
-  const API_BASE = (window.GREENCART_API_URL || "").replace(/\/$/, "");
+  const configuredApi = (window.GREENCART_API_URL || "").replace(/\/$/, "");
+  const API_BASE = configuredApi || (location.hostname === "localhost" && location.port !== "3000" ? "http://localhost:3000" : "");
 
   try {
     const saved = JSON.parse(localStorage.getItem("gc_cart") || "{}");
