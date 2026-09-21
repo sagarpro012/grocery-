@@ -27,14 +27,23 @@ app.get("/api/health", (req, res) => res.json({ ok: true }));
 const userByEmail = db.prepare("SELECT id, name, email, password_hash AS passwordHash FROM users WHERE email = ?");
 const insertUser = db.prepare("INSERT INTO users (id, name, email, password_hash) VALUES (?, ?, ?, ?)");
 const passwordHash = password => crypto.scryptSync(password, process.env.AUTH_SALT || "greencart-demo-salt", 32).toString("hex");
-const publicUser = user => ({ id: user.id, name: user.name, email: user.email });
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "admin@greencart.test").trim().toLowerCase();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+const publicUser = user => ({ id: user.id, name: user.name, email: user.email, role: user.email === ADMIN_EMAIL ? "admin" : "user" });
+
+function isAdminCredentials(email = "", password = "") {
+  return String(email).trim().toLowerCase() === ADMIN_EMAIL && String(password) === ADMIN_PASSWORD;
+}
 
 app.post("/api/auth/signup", (req, res) => {
   const { name = "", email = "", password = "" } = req.body || {};
-  if (name.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()) || password.length < 6) {
+  const cleanEmail = String(email).trim().toLowerCase();
+  if (cleanEmail === ADMIN_EMAIL) {
+    return res.status(403).json({ error: "This email is reserved for the store admin." });
+  }
+  if (name.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanEmail) || password.length < 6) {
     return res.status(400).json({ error: "Please provide a valid name, email, and password of at least 6 characters." });
   }
-  const cleanEmail = email.trim().toLowerCase();
   try {
     const user = { id: "u_" + crypto.randomUUID(), name: name.trim(), email: cleanEmail };
     insertUser.run(user.id, user.name, user.email, passwordHash(password));
@@ -48,7 +57,13 @@ app.post("/api/auth/signup", (req, res) => {
 
 app.post("/api/auth/login", (req, res) => {
   const { email = "", password = "" } = req.body || {};
-  const user = userByEmail.get(email.trim().toLowerCase());
+  const cleanEmail = String(email).trim().toLowerCase();
+
+  if (isAdminCredentials(cleanEmail, password)) {
+    return res.json({ user: { id: "admin_1", name: "Admin", email: ADMIN_EMAIL, role: "admin" } });
+  }
+
+  const user = userByEmail.get(cleanEmail);
   const suppliedHash = passwordHash(password);
   if (!user || !password || !crypto.timingSafeEqual(Buffer.from(user.passwordHash, "hex"), Buffer.from(suppliedHash, "hex"))) {
     return res.status(401).json({ error: "Email or password is incorrect." });
@@ -73,6 +88,89 @@ app.get("/api/products/:id", (req, res) => {
   `).get(req.params.id);
   if (!row) return res.status(404).json({ error: "Not found" });
   res.json({ product: row });
+});
+
+app.post("/api/admin/products", (req, res) => {
+  const { email = "", password = "", product = {} } = req.body || {};
+  if (!isAdminCredentials(email, password)) {
+    return res.status(403).json({ error: "Admin access only." });
+  }
+
+  const name = String(product.name || "").trim();
+  const category = String(product.category || "").trim();
+  const unit = String(product.unit || "").trim();
+  const emoji = String(product.emoji || "").trim() || "🛒";
+  const tag = String(product.tag || "").trim();
+  const price = Number(product.price);
+
+  if (!name || !category || !unit || !Number.isFinite(price) || price <= 0) {
+    return res.status(400).json({ error: "Name, category, unit, and a valid price are required." });
+  }
+
+  const id = String(product.id || `p_${Date.now().toString(36).toUpperCase()}`);
+  const row = {
+    id,
+    name,
+    cat: category,
+    price: Number(price.toFixed(2)),
+    unit,
+    emoji,
+    tag: tag || "New",
+    rating: Number(product.rating || 4.5),
+    stock: Number(product.stock || 100)
+  };
+
+  db.prepare(`
+    INSERT INTO products (id, name, category, price, unit, emoji, tag, rating, stock)
+    VALUES (@id, @name, @cat, @price, @unit, @emoji, @tag, @rating, @stock)
+    ON CONFLICT(id) DO UPDATE SET
+      name = excluded.name,
+      category = excluded.category,
+      price = excluded.price,
+      unit = excluded.unit,
+      emoji = excluded.emoji,
+      tag = excluded.tag,
+      rating = excluded.rating,
+      stock = excluded.stock
+  `).run(row);
+
+  res.status(201).json({ product: row });
+});
+
+app.patch("/api/admin/products/:id", (req, res) => {
+  const { email = "", password = "" } = req.body || {};
+  if (!isAdminCredentials(email, password)) {
+    return res.status(403).json({ error: "Admin access only." });
+  }
+
+  const existing = db.prepare("SELECT id FROM products WHERE id = ?").get(req.params.id);
+  if (!existing) return res.status(404).json({ error: "Product not found." });
+
+  const updates = {};
+  if (req.body.price !== undefined) {
+    const price = Number(req.body.price);
+    if (!Number.isFinite(price) || price <= 0) return res.status(400).json({ error: "Price must be a positive number." });
+    updates.price = Number(price.toFixed(2));
+  }
+  if (req.body.name !== undefined) updates.name = String(req.body.name).trim();
+  if (req.body.category !== undefined) updates.category = String(req.body.category).trim();
+  if (req.body.unit !== undefined) updates.unit = String(req.body.unit).trim();
+  if (req.body.emoji !== undefined) updates.emoji = String(req.body.emoji).trim() || "🛒";
+  if (req.body.tag !== undefined) updates.tag = String(req.body.tag).trim();
+  if (req.body.rating !== undefined) updates.rating = Number(req.body.rating);
+  if (req.body.stock !== undefined) updates.stock = Number(req.body.stock);
+
+  if (!Object.keys(updates).length) return res.status(400).json({ error: "No product fields to update." });
+
+  const setClauses = Object.keys(updates).map(key => `${key === "category" ? "category" : key} = @${key}`);
+  const params = { ...updates, id: req.params.id };
+  db.prepare(`UPDATE products SET ${setClauses.join(", ")} WHERE id = @id`).run(params);
+
+  const product = db.prepare(`
+    SELECT id, name, category AS cat, price, unit, emoji, tag, rating, stock
+    FROM products WHERE id = ?
+  `).get(req.params.id);
+  res.json({ product });
 });
 
 /* ---------- orders ---------- */
