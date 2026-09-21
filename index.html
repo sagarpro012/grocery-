@@ -923,6 +923,7 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
     </div>
     <button class="btn btn-ghost btn-block" type="button" id="adminLoadProductBtn">Load selected product</button>
     <button class="btn btn-primary btn-block" type="button" id="adminUpdatePriceBtn" style="margin-top:10px">Update selected price</button>
+    <button class="btn btn-ghost btn-block" type="button" data-admin-logout style="margin-top:18px">Log out</button>
   </div>
 </div>
 
@@ -1898,6 +1899,13 @@ footer{background:#fff;border-top:1px solid var(--line);padding:52px 0 34px;marg
 
   adminModal.addEventListener("click", e => {
     if (e.target.closest("[data-close-admin]")) closeAdminPanel();
+    if (e.target.closest("[data-admin-logout]")) {
+      state.user = null;
+      saveUser();
+      updateAccountButton();
+      closeAdminPanel();
+      toast("You have been logged out", "👋");
+    }
   });
 
   historyModal.addEventListener("click", e => { if (e.target.closest("[data-close-history]")) closeHistory(); });
